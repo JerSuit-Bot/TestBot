@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 140 25% 97%;
+    --foreground: 145 32% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 145 32% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 145 32% 11%;
+    --primary: 145 70% 34%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 140 27% 94%;
+    --secondary-foreground: 145 30% 19%;
+    --muted: 140 18% 94%;
+    --muted-foreground: 145 12% 48%;
+    --accent: 140 35% 92%;
+    --accent-foreground: 145 70% 28%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 140 18% 88%;
+    --input: 140 18% 88%;
+    --ring: 145 70% 34%;
+    --radius: 0.75rem;
+
+    --success: 145 70% 34%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --chart-1: 145 70% 34%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 70% 50%;
+    --chart-4: 43 74% 50%;
+    --chart-5: 0 70% 54%;
+  }
+
+  .dark {
+    --background: 150 20% 7%;
+    --foreground: 140 20% 92%;
+    --card: 150 18% 10%;
+    --card-foreground: 140 20% 92%;
+    --popover: 150 18% 10%;
+    --popover-foreground: 140 20% 92%;
+    --primary: 145 65% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 150 15% 14%;
+    --secondary-foreground: 140 20% 85%;
+    --muted: 150 15% 14%;
+    --muted-foreground: 140 10% 55%;
+    --accent: 150 20% 16%;
+    --accent-foreground: 145 65% 55%;
+    --destructive: 0 63% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 150 12% 18%;
+    --input: 150 12% 18%;
+    --ring: 145 65% 42%;
+    --radius: 0.75rem;
+
+    --success: 145 65% 42%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 0%;
+    --chart-1: 145 65% 42%;
+    --chart-2: 173 48% 50%;
+    --chart-3: 197 60% 58%;
+    --chart-4: 43 74% 58%;
+    --chart-5: 0 70% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+::selection {
+  background: hsl(var(--primary) / 0.2);
+  color: hsl(var(--primary));
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+@layer utilities {
+  .glass {
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--muted-foreground)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,345 @@
+'use client';
+
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import {
+  Globe2, ArrowRight, LogOut, Search, RefreshCw, Crown, Shield,
+  Bot, Users, Plus, AlertCircle, Home,
+} from 'lucide-react';
+import { discordIconUrl, discordAvatarUrl } from '@/lib/constants';
+import { ThemeToggle } from '@/components/theme-toggle';
+
+interface GuildInfo {
+  guild_id: string;
+  discord_id: string;
+  name: string;
+  icon: string | null;
+  member_count: number;
+  bot_added: boolean;
+  role: string;
+  permissions: string;
+}
+
+type Filter = 'all' | 'owned' | 'administrator' | 'installed' | 'needs_setup';
+
+export default function ServersPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<{ discord_id: string; username: string; display_name: string | null; avatar: string | null } | null>(null);
+  const [guilds, setGuilds] = useState<GuildInfo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<Filter>('all');
+
+  const load = useCallback(async () => {
+    try {
+      const [userRes, guildsRes] = await Promise.all([
+        fetch('/api/auth/me'),
+        fetch('/api/guilds'),
+      ]);
+
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        if (!userData.authenticated) {
+          router.push('/sign-in');
+          return;
+        }
+        setUser(userData.user);
+      }
+
+      if (guildsRes.ok) {
+        const guildsData = await guildsRes.json();
+        setGuilds(guildsData.guilds || []);
+        setError(null);
+      } else {
+        setError('Failed to load servers. Please try again.');
+      }
+    } catch {
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [router]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const refresh = async () => {
+    setRefreshing(true);
+    await load();
+  };
+
+  const filteredGuilds = useMemo(() => {
+    let result = guilds;
+
+    if (filter === 'owned') {
+      result = result.filter((g) => g.role === 'SERVER_OWNER');
+    } else if (filter === 'administrator') {
+      result = result.filter((g) => g.role !== 'SERVER_OWNER');
+    } else if (filter === 'installed') {
+      result = result.filter((g) => g.bot_added);
+    } else if (filter === 'needs_setup') {
+      result = result.filter((g) => !g.bot_added);
+    }
+
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
+      result = result.filter((g) => g.name.toLowerCase().includes(q) || g.discord_id.includes(q));
+    }
+
+    return result;
+  }, [guilds, filter, search]);
+
+  const filterOptions: { value: Filter; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'owned', label: 'Owned' },
+    { value: 'administrator', label: 'Administrator' },
+    { value: 'installed', label: 'JerSuit Installed' },
+    { value: 'needs_setup', label: 'Needs Setup' },
+  ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <p className="text-sm text-muted-foreground">Loading your servers...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Navbar */}
+      <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-2.5">
+              <img src="/سس.jpg" alt="JerSuit" className="h-8 w-8 rounded-lg object-cover" />
+              <span className="text-base font-semibold tracking-tight">Jer<span className="text-primary">Suit</span></span>
+            </Link>
+            <span className="ml-2 hidden text-xs text-muted-foreground sm:block">/ Servers</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            {user && (
+              <div className="flex items-center gap-2">
+                <img
+                  src={discordAvatarUrl(user.discord_id, user.avatar, 64)}
+                  alt={user.username}
+                  className="h-8 w-8 rounded-full"
+                />
+                <span className="hidden text-sm font-medium sm:block">{user.display_name || user.username}</span>
+              </div>
+            )}
+            <button
+              onClick={async () => { await fetch('/api/auth/logout', { method: 'POST' }); router.push('/'); }}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:text-destructive hover:border-destructive/30"
+              aria-label="Logout"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main */}
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Choose a server</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Select a server where you have permission to manage JerSuit.
+          </p>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mb-6 flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+            <AlertCircle size={18} className="shrink-0 text-destructive" />
+            <p className="text-sm text-destructive">{error}</p>
+            <button onClick={refresh} className="ml-auto text-sm font-medium text-destructive hover:underline">
+              Try again
+            </button>
+          </div>
+        )}
+
+        {/* Controls */}
+        {guilds.length > 0 && (
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by name or ID..."
+                className="h-10 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+
+            {/* Refresh */}
+            <button
+              onClick={refresh}
+              disabled={refreshing}
+              className="flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium text-muted-foreground transition hover:text-foreground hover:bg-accent/50 disabled:opacity-50"
+            >
+              <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          </div>
+        )}
+
+        {/* Filters */}
+        {guilds.length > 0 && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            {filterOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setFilter(opt.value)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                  filter === opt.value
+                    ? 'bg-primary text-primary-foreground'
+                    : 'border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Server grid */}
+        {guilds.length === 0 && !error ? (
+          <EmptyState onRefresh={refresh} refreshing={refreshing} />
+        ) : filteredGuilds.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center">
+            <Globe2 size={36} className="mx-auto text-muted-foreground/50" />
+            <p className="mt-4 text-sm text-muted-foreground">No servers match your search or filter.</p>
+            <button
+              onClick={() => { setSearch(''); setFilter('all'); }}
+              className="mt-4 text-sm font-medium text-primary hover:underline"
+            >
+              Clear filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredGuilds.map((g) => (
+              <ServerCard key={g.guild_id} guild={g} onClick={() => router.push(`/dashboard/${g.discord_id}`)} />
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function ServerCard({ guild, onClick }: { guild: GuildInfo; onClick: () => void }) {
+  const isOwner = guild.role === 'SERVER_OWNER';
+  const clientId = process.env.NEXT_PUBLIC_APP_URL ? '' : '';
+  const inviteUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&scope=bot+applications.commands&permissions=8`;
+
+  return (
+    <div className="group flex flex-col rounded-2xl border border-border bg-card p-5 transition hover:border-primary/30 hover:shadow-lg">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        {guild.icon ? (
+          <img
+            src={discordIconUrl(guild.discord_id, guild.icon)}
+            alt={guild.name}
+            className="h-12 w-12 rounded-xl object-cover"
+          />
+        ) : (
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Globe2 size={22} />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-semibold">{guild.name}</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">{guild.member_count || 0} members</p>
+        </div>
+      </div>
+
+      {/* Badges */}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${
+          isOwner ? 'bg-primary/15 text-primary' : 'bg-accent text-muted-foreground'
+        }`}>
+          {isOwner ? <Crown size={11} /> : <Shield size={11} />}
+          {isOwner ? 'Owner' : 'Administrator'}
+        </span>
+        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${
+          guild.bot_added ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground'
+        }`}>
+          <Bot size={11} />
+          {guild.bot_added ? 'Installed' : 'Not Installed'}
+        </span>
+      </div>
+
+      {/* Action */}
+      <div className="mt-5 flex-1" />
+      {guild.bot_added ? (
+        <button
+          onClick={onClick}
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+        >
+          Manage Server <ArrowRight size={14} />
+        </button>
+      ) : (
+        <a
+          href={inviteUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-border text-sm font-medium text-foreground transition hover:bg-accent/50"
+        >
+          <Plus size={14} /> Add JerSuit
+        </a>
+      )}
+    </div>
+  );
+}
+
+function EmptyState({ onRefresh, refreshing }: { onRefresh: () => void; refreshing: boolean }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 px-6 py-16 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+        <Globe2 size={28} className="text-muted-foreground" />
+      </div>
+      <h3 className="mt-6 text-lg font-semibold">No manageable servers</h3>
+      <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+        JerSuit only shows servers where you have sufficient Discord permissions. You need to be the server owner or have Administrator access.
+      </p>
+      <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+        <button
+          onClick={onRefresh}
+          disabled={refreshing}
+          className="flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+        >
+          <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
+          Refresh Servers
+        </button>
+        <Link
+          href="/"
+          className="flex h-10 items-center justify-center gap-2 rounded-lg border border-border px-5 text-sm font-medium text-muted-foreground transition hover:text-foreground hover:bg-accent/50"
+        >
+          <Home size={15} /> Back to Home
+        </Link>
+      </div>
+      <a
+        href="https://discord.com/app"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-3 text-xs text-muted-foreground hover:text-foreground hover:underline"
+      >
+        Create a Discord Server
+      </a>
+    </div>
+  );
+}
