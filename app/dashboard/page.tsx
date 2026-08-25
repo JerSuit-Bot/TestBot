@@ -61,7 +61,7 @@ export default function DashboardHome() {
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2.5">
             <Link href="/" className="flex items-center gap-2.5">
-              <img src="/سس.jpg" alt="JerSuit" className="h-8 w-8 rounded-lg object-cover" />
+              <img src="/سس.png" alt="JerSuit" className="h-8 w-8 rounded-lg object-cover" />
               <span className="text-base font-semibold tracking-tight">Jer<span className="text-primary">Suit</span></span>
             </Link>
           </div>

@@ -1,0 +1,20 @@
+import type { NextRequest } from 'next/server';
+
+/**
+ * Returns the canonical base URL of the application.
+ *
+ * Prefers `NEXT_PUBLIC_APP_URL` when configured (required for correct
+ * redirect targets in Codespaces / behind reverse proxies where the incoming
+ * Host header may otherwise resolve to localhost). Falls back to the origin of
+ * the incoming request.
+ */
+export function getBaseUrl(request?: NextRequest): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL;
+  if (configured && /^https?:\/\//.test(configured)) {
+    return configured.replace(/\/+$/, '');
+  }
+  if (request) {
+    return new URL(request.url).origin;
+  }
+  return '';
+}

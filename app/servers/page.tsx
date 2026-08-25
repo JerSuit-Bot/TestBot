@@ -120,7 +120,7 @@ export default function ServersPage() {
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-2.5">
             <Link href="/" className="flex items-center gap-2.5">
-              <img src="/سس.jpg" alt="JerSuit" className="h-8 w-8 rounded-lg object-cover" />
+              <img src="/سس.png" alt="JerSuit" className="h-8 w-8 rounded-lg object-cover" />
               <span className="text-base font-semibold tracking-tight">Jer<span className="text-primary">Suit</span></span>
             </Link>
             <span className="ml-2 hidden text-xs text-muted-foreground sm:block">/ Servers</span>
@@ -243,8 +243,11 @@ export default function ServersPage() {
 
 function ServerCard({ guild, onClick }: { guild: GuildInfo; onClick: () => void }) {
   const isOwner = guild.role === 'SERVER_OWNER';
-  const clientId = process.env.NEXT_PUBLIC_APP_URL ? '' : '';
-  const inviteUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&scope=bot+applications.commands&permissions=8`;
+  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '';
+
+  const inviteUrl = clientId
+    ? `https://discord.com/oauth2/authorize?client_id=${encodeURIComponent(clientId)}&scope=bot%20applications.commands&permissions=8&guild_id=${encodeURIComponent(guild.discord_id)}&disable_guild_select=true`
+    : '/sign-in';
 
   return (
     <div className="group flex flex-col rounded-2xl border border-border bg-card p-5 transition hover:border-primary/30 hover:shadow-lg">

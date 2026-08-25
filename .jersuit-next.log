@@ -1,0 +1,20 @@
+
+> nextjs@0.1.0 dev
+> next dev -H 0.0.0.0 -p 3000
+
+  ▲ Next.js 13.5.11
+  - Local:        http://localhost:3000
+  - Network:      http://0.0.0.0:3000
+  - Environments: .env.local
+  - Experiments (use at your own risk):
+     · serverComponentsExternalPackages
+
+ ✓ Ready in 1604ms
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ ✓ Compiled /page in 2.9s (538 modules)
+ ✓ Compiled in 351ms (271 modules)
+ ✓ Compiled /dashboard/page in 219ms (523 modules)
+ ✓ Compiled /servers/page in 126ms (543 modules)
+ ✓ Compiled /sign-in/page in 112ms (551 modules)

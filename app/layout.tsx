@@ -1,12 +1,14 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { cookies } from 'next/headers';
 import { ThemeProvider } from '@/components/theme-provider';
+import { LANG_COOKIE, type Language } from '@/lib/i18n';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'JerSuit — Discord Management Platform',
+  title: 'JerSuit Bot - Discord Dashboard',
   description: 'Powerful Discord moderation, automation, and server management from one unified dashboard.',
 };
 
@@ -31,10 +33,15 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = cookies();
+  const langValue = cookieStore.get(LANG_COOKIE)?.value;
+  const lang: Language = langValue === 'ar' || langValue === 'en' ? langValue : 'en';
+  const dir = lang === 'ar' ? 'rtl' : 'ltr';
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={lang} dir={dir} suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/سس.jpg" />
+        <link rel="icon" href="/سس.png" />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={inter.className}>

@@ -1,0 +1,169 @@
+/**
+ * Bot response localization: English and Arabic.
+ *
+ * Keys are looked up per-guild (guild settings language) or the platform
+ * default. Command logic is NEVER duplicated per language - only this
+ * dictionary (plus a wildcard {lang} variable in templates).
+ */
+export type BotLang = 'en' | 'ar';
+
+type BotDict = Record<string, string>;
+
+const en: BotDict = {
+  'errors.notRegistered': 'That command is not registered.',
+  'errors.failed': 'The command failed. Please try again later.',
+  'errors.guildOnly': 'This command can only be used inside a server.',
+  'errors.ownerOnly': 'This command is restricted to the platform owner.',
+  'errors.disabled': 'This command is currently disabled by the administrators.',
+  'errors.missingPermissions': 'You do not have permission to use this command.',
+  'errors.missingBotPermissions': 'I am missing required permissions to do that.',
+  'errors.cooldown': 'Please wait {cooldown} seconds before using this command again.',
+  'errors.config': 'This command is not configured yet. Ask a server administrator to configure it.',
+
+  'moderation.userBanned': '**{user}** has been banned.',
+  'moderation.reason': 'Reason: {reason}',
+  'moderation.userUnbanned': '**{user}** has been unbanned.',
+  'moderation.userKicked': '**{user}** has been kicked.',
+  'moderation.userTimedOut': '**{user}** has been timed out until {until}.',
+  'moderation.userUntimedOut': '**{user}** timeout removed.',
+  'moderation.userMuted': '**{user}** has been muted for {duration}.',
+  'moderation.userUnmuted': '**{user}** has been unmuted.',
+  'moderation.userWarned': '**{user}** has been warned.',
+  'moderation.warningCleared': 'Warning cleared.',
+  'moderation.warningsCleared': 'Warnings cleared for **{user}**.',
+  'moderation.noWarnings': 'No warnings found.',
+  'moderation.messagesCleared': 'Deleted **{count}** messages.',
+  'moderation.slowmodeSet': 'Slowmode set to **{duration}** in {channel}.',
+  'moderation.channelLocked': '🔒 {channel} locked.',
+  'moderation.channelUnlocked': '🔓 {channel} unlocked.',
+  'moderation.softBanned': '**{user}** soft-banned (banned and immediately unbanned).',
+  'moderation.nicknameChanged': 'Nickname changed to **{nickname}**.',
+  'moderation.noHistory': 'No moderation history for this user.',
+
+  'welcome.enabled': 'Welcome messages enabled in {channel}.',
+  'welcome.disabled': 'Welcome messages disabled.',
+  'welcome.channelSet': 'Welcome channel set to {channel}.',
+  'welcome.messageSet': 'Welcome message updated.',
+
+  'tickets.created': 'Ticket created: {channel}',
+  'tickets.closed': 'Ticket closed.',
+  'tickets.deleted': 'Ticket deleted.',
+
+  'leveling.rank': 'Rank {rank}',
+  'economy.balance': '**{user}** balance: **{balance}** coins',
+  'economy.dailyClaimed': 'Daily reward claimed: **{amount}** coins.',
+  'economy.workDone': 'You worked and earned **{amount}** coins.',
+
+  'giveaways.started': '🎉 Giveaway started for **{prize}**!',
+  'giveaways.ended': '🎉 Giveaway ended! Winner: {winners}',
+
+  'suggestions.submitted': 'Suggestion submitted!',
+  'suggestions.approved': 'Suggestion approved.',
+  'suggestions.denied': 'Suggestion denied.',
+
+  'starboard.enabled': 'Starboard enabled in {channel}.',
+  'starboard.disabled': 'Starboard disabled.',
+
+  'utility.pollCreated': '📊 Poll created!',
+  'utility.reminderSet': 'I will remind you in {duration}.',
+  'utility.announcementSent': 'Announcement sent to {channel}.',
+
+  'fun.response': '✨ {response}',
+
+  'owner.maintenanceOn': 'Maintenance mode ENABLED.',
+  'owner.maintenanceOff': 'Maintenance mode DISABLED.',
+  'owner.reloaded': 'Commands reloaded. {count} commands are now registered.',
+  'owner.leftGuild': 'Left **{guild}**.',
+  'owner.announce': 'Announcement broadcast.',
+  'owner.shutdown': 'Bot shutting down...',
+  'owner.restart': 'Bot restarting...',
+  'owner.cacheCleared': 'Cache cleared.',
+};
+
+const ar: BotDict = {
+  'errors.notRegistered': 'هذا الأمر غير مسجل.',
+  'errors.failed': 'فشل الأمر. حاول مرة أخرى لاحقاً.',
+  'errors.guildOnly': 'يمكن استخدام هذا الأمر داخل السيرفر فقط.',
+  'errors.ownerOnly': 'هذا الأمر مخصص لمالك المنصة فقط.',
+  'errors.disabled': 'هذا الأمر معطّل حالياً من قبل الإدارة.',
+  'errors.missingPermissions': 'ليس لديك صلاحية لاستخدام هذا الأمر.',
+  'errors.missingBotPermissions': 'أحتاج صلاحيات إضافية لتنفيذ هذا الأمر.',
+  'errors.cooldown': 'يرجى الانتظار {cooldown} ثانية قبل استخدام الأمر مرة أخرى.',
+  'errors.config': 'هذا الأمر غير مهيأ بعد. اطلب من مشرف السيرفر إعداده.',
+
+  'moderation.userBanned': '**{user}** تم حظره.',
+  'moderation.reason': 'السبب: {reason}',
+  'moderation.userUnbanned': '**{user}** تم فك حظره.',
+  'moderation.userKicked': '**{user}** تم طرده.',
+  'moderation.userTimedOut': '**{user}** تم تقييده حتى {until}.',
+  'moderation.userUntimedOut': 'تم إزالة التقييد عن **{user}**.',
+  'moderation.userMuted': '**{user}** تم كتمه لمدة {duration}.',
+  'moderation.userUnmuted': '**{user}** تم فك كتمه.',
+  'moderation.userWarned': '**{user}** تم تحذيره.',
+  'moderation.warningCleared': 'تم حذف التحذير.',
+  'moderation.warningsCleared': 'تم حذف تحذيرات **{user}**.',
+  'moderation.noWarnings': 'لا توجد تحذيرات.',
+  'moderation.messagesCleared': 'تم حذف **{count}** رسالة.',
+  'moderation.slowmodeSet': 'تم ضبط الوضع البطيء إلى **{duration}** في {channel}.',
+  'moderation.channelLocked': '🔒 تم قفل {channel}.',
+  'moderation.channelUnlocked': '🔓 تم فتح {channel}.',
+  'moderation.softBanned': '**{user}** تم حظره الناعم (حظر ثم فك فوراً).',
+  'moderation.nicknameChanged': 'تم تغيير الاسم إلى **{nickname}**.',
+  'moderation.noHistory': 'لا يوجد سجل إشراف لهذا المستخدم.',
+
+  'welcome.enabled': 'تم تفعيل رسائل الترحيب في {channel}.',
+  'welcome.disabled': 'تم تعطيل رسائل الترحيب.',
+  'welcome.channelSet': 'تم ضبط قناة الترحيب إلى {channel}.',
+  'welcome.messageSet': 'تم تحديث رسالة الترحيب.',
+
+  'tickets.created': 'تم إنشاء التذكرة: {channel}',
+  'tickets.closed': 'تم إغلاق التذكرة.',
+  'tickets.deleted': 'تم حذف التذكرة.',
+
+  'leveling.rank': 'المرتبة {rank}',
+  'economy.balance': '**{user}** رصيده: **{balance}** عملة',
+  'economy.dailyClaimed': 'تم استلام المكافأة اليومية: **{amount}** عملة.',
+  'economy.workDone': 'عملت وكسبت **{amount}** عملة.',
+
+  'giveaways.started': '🎉 بدأت السحب على **{prize}**!',
+  'giveaways.ended': '🎉 انتهى السحب! الفائز: {winners}',
+
+  'suggestions.submitted': 'تم إرسال الاقتراح!',
+  'suggestions.approved': 'تمت الموافقة على الاقتراح.',
+  'suggestions.denied': 'تم رفض الاقتراح.',
+
+  'starboard.enabled': 'تم تفعيل لوحة النجوم في {channel}.',
+  'starboard.disabled': 'تم تعطيل لوحة النجوم.',
+
+  'utility.pollCreated': '📊 تم إنشاء الاستطلاع!',
+  'utility.reminderSet': 'سأذكّرك خلال {duration}.',
+  'utility.announcementSent': 'تم إرسال الإعلان إلى {channel}.',
+
+  'fun.response': '✨ {response}',
+
+  'owner.maintenanceOn': 'تم تفعيل وضع الصيانة.',
+  'owner.maintenanceOff': 'تم تعطيل وضع الصيانة.',
+  'owner.reloaded': 'تم إعادة تحميل الأوامر. {count} أمر مسجل الآن.',
+  'owner.leftGuild': 'تم مغادرة **{guild}**.',
+  'owner.announce': 'تم بث الإعلان.',
+  'owner.shutdown': 'جاري إيقاف البوت...',
+  'owner.restart': 'جاري إعادة تشغيل البوت...',
+  'owner.cacheCleared': 'تم مسح الذاكرة المؤقتة.',
+};
+
+const dicts: Record<BotLang, BotDict> = { en, ar };
+
+export function botT(lang: BotLang | string, key: string, vars?: Record<string, string | number>): string {
+  const l = (dicts[lang as BotLang] ? lang : 'en') as BotLang;
+  let text = dicts[l][key] ?? dicts.en[key] ?? key;
+  if (vars) {
+    for (const [k, v] of Object.entries(vars)) {
+      text = text.replaceAll(`{${k}}`, String(v));
+    }
+  }
+  return text;
+}
+
+export function isBotLang(v: string): v is BotLang {
+  return v === 'en' || v === 'ar';
+}

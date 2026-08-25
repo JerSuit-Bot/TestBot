@@ -6,43 +6,67 @@ import { setSessionCookie, getClientIP, getUserAgent } from '@/lib/api-utils';
 import { auditLog } from '@/lib/audit';
 import { upsertUserFromDiscord, syncUserGuilds, createSession } from '@/lib/services';
 import { getConfig } from '@/lib/config';
+import { getBaseUrl } from '@/lib/urls';
 import { logger } from '@/lib/logger';
+
+function redirectWithError(base: string, key: string): NextResponse {
+  logger.warn('auth', `[OAuth] login failed: ${key}`);
+  return NextResponse.redirect(`${base}/?auth_error=${key}`);
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
+  const base = getBaseUrl(request);
   const code = searchParams.get('code');
   const state = searchParams.get('state');
   const error = searchParams.get('error');
+  const errorDescription = searchParams.get('error_description');
 
   if (error) {
-    return NextResponse.redirect(new URL('/?auth_error=' + error, request.url));
+    if (error === 'access_denied') return redirectWithError(base, 'access_denied');
+    logger.warn('auth', '[OAuth] Discord returned an error', {
+      error,
+      errorDescription: errorDescription ?? undefined,
+    });
+    return redirectWithError(base, 'access_denied');
   }
 
-  if (!code || !state) {
-    return NextResponse.redirect(new URL('/?auth_error=no_code', request.url));
+  if (!code) {
+    return redirectWithError(base, 'missing_code');
+  }
+  if (!state) {
+    return redirectWithError(base, 'state_mismatch');
   }
 
   const cookieStore = cookies();
   const storedState = cookieStore.get('oauth_state')?.value;
-
-  if (!storedState || storedState !== state) {
-    logger.warn('auth', 'OAuth state mismatch', { storedState: !!storedState, providedState: !!state });
-    return NextResponse.redirect(new URL('/?auth_error=state_mismatch', request.url));
-  }
-
   cookieStore.delete('oauth_state');
 
-  const tokenData = await exchangeDiscordCode(code);
-  if (!tokenData) {
-    return NextResponse.redirect(new URL('/?auth_error=token_exchange_failed', request.url));
+  if (!storedState || storedState !== state) {
+    logger.warn('auth', 'OAuth state mismatch', { storedState: Boolean(storedState), providedState: Boolean(state) });
+    return redirectWithError(base, 'state_mismatch');
   }
 
-  const discordUser = await getDiscordUser(tokenData.access_token);
+  const exchange = await exchangeDiscordCode(code);
+  if (!exchange.ok || !exchange.token) {
+    const key =
+      exchange.errorKind === 'invalid_client' ? 'invalid_client'
+      : exchange.errorKind === 'invalid_grant' ? 'invalid_grant'
+      : exchange.errorKind === 'invalid_request' ? 'invalid_request'
+      : exchange.errorKind === 'access_denied' ? 'access_denied'
+      : exchange.errorKind === 'expired_code' ? 'invalid_code'
+      : exchange.errorKind === 'network_error' ? 'network_error'
+      : 'token_exchange_failed';
+    if (key === 'invalid_code') return redirectWithError(base, 'invalid_code');
+    return redirectWithError(base, key);
+  }
+
+  const discordUser = await getDiscordUser(exchange.token.access_token);
   if (!discordUser) {
-    return NextResponse.redirect(new URL('/?auth_error=user_fetch_failed', request.url));
+    return redirectWithError(base, 'user_fetch_failed');
   }
 
-  const discordGuilds = await getDiscordGuilds(tokenData.access_token);
+  const discordGuilds = await getDiscordGuilds(exchange.token.access_token);
 
   let userId: string;
   try {
@@ -54,7 +78,7 @@ export async function GET(request: NextRequest) {
     );
   } catch (e) {
     logger.error('auth', 'Failed to upsert user', { error: (e as Error).message });
-    return NextResponse.redirect(new URL('/?auth_error=db_error', request.url));
+    return redirectWithError(base, 'db_error');
   }
 
   const manageableGuilds = discordGuilds
@@ -79,7 +103,7 @@ export async function GET(request: NextRequest) {
     sessionToken = await createSession(userId, ip, ua, 168);
   } catch (e) {
     logger.error('auth', 'Failed to create session', { error: (e as Error).message });
-    return NextResponse.redirect(new URL('/?auth_error=session_failed', request.url));
+    return redirectWithError(base, 'session_failed');
   }
 
   await auditLog({
@@ -91,7 +115,7 @@ export async function GET(request: NextRequest) {
     user_agent: ua,
   });
 
-  const response = NextResponse.redirect(new URL('/servers', request.url));
+  const response = NextResponse.redirect(`${base}/servers`);
   setSessionCookie(response, SESSION_COOKIE, sessionToken, 168);
   return response;
 }

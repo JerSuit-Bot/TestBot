@@ -50,7 +50,7 @@ export default function GuildOverview() {
     <>
       <div className="mb-8">
         <h1 className="text-2xl font-semibold tracking-[-0.04em] text-[#11271a]">Server overview</h1>
-        <p className="mt-2 text-sm text-[#708278]">Manage your server's JerSuit features. Each feature is configured independently for this server only.</p>
+        <p className="mt-2 text-sm text-[#708278]">Manage your server&apos;s JerSuit features. Each feature is configured independently for this server only.</p>
       </div>
 
       <div className="mb-8 grid gap-4 sm:grid-cols-3">

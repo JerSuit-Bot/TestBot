@@ -1,0 +1,69 @@
+/**
+ * Moderation commands - all write real changes through discord.js and record
+ * a moderation case in the database for history/audit purposes.
+ */
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
+import { defineCommand, PERMS, error, success } from '../helpers';
+import { jerSuitEmbed } from '../ui';
+import type { CommandContext } from '../types';
+import { createModerationCase } from '@/lib/services';
+
+const PERM_BAN = PermissionFlagsBits.BanMembers;
+const PERM_KICK = PermissionFlagsBits.KickMembers;
+const PERM_MOD = PermissionFlagsBits.ModerateMembers;
+const PERM_MANAGE = PermissionFlagsBits.ManageMessages;
+const PERM_ADMIN = PermissionFlagsBits.Administrator;
+
+function getUser(ctx: CommandContext) {
+  return ctx.interaction.options.getUser('user', true);
+}
+function getReason(ctx: CommandContext): string {
+  return ctx.interaction.options.getString('reason') ?? 'No reason provided';
+}
+function getTargetMember(ctx: CommandContext) {
+  return ctx.interaction.guild?.members.fetch(getUser(ctx).id).catch(() => null);
+}
+
+async function logCase(ctx: CommandContext, action: string, targetId: string, targetName: string, reason: string | null, duration?: string) {
+  if (!ctx.interaction.guildId) return;
+  await createModerationCase({
+    discordGuildId: ctx.interaction.guildId,
+    action,
+    targetId,
+    targetName,
+    moderatorId: ctx.interaction.user.id,
+    moderatorName: ctx.interaction.user.username,
+    reason,
+    duration,
+  }).catch(() => undefined);
+}
+
+async function cannotModerate(ctx: CommandContext, member: { permissions: { has: (p: bigint) => boolean }; moderatable?: boolean } | null): Promise<boolean> {
+  if (!member) return false;
+  if (member.permissions.has(PERM_ADMIN)) return true;
+  if (member.moderatable === false) return true;
+  return false;
+}
+
+defineCommand({
+  name: 'ban',
+  description: 'Ban a member from the server.',
+  category: 'moderation',
+  memberPermissions: PERM_BAN, cooldown: 3,
+  usage: '/ban <user> [reason]',
+  examples: ['/ban @user Spamming'],
+  builder: (b) => b
+    .addUserOption((o) => o.setName('user').setDescription('User to ban').setRequired(true))
+    .addStringOption((o) => o.setName('reason').setDescription('Reason')),
+  execute: async (ctx) => {
+    const target = getUser(ctx);
+    const reason = getReason(ctx);
+    const member = await getTargetMember(ctx);
+    if (await cannotModerate(ctx, member)) {
+      return error(ctx.interaction, 'That member cannot be banned.', true);
+    }
+    await ctx.interaction.guild?.members.ban(target.id, { reason: reason.slice(0, 512) });
+    await logCase(ctx, 'ban', target.id, target.username, reason);
+    await success(ctx, 'Banned **' + target.username + '**. Reason: ' + reason);
+  },
+});

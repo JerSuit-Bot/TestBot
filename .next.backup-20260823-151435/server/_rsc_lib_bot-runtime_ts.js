@@ -1,0 +1,25 @@
+"use strict";
+/*
+ * ATTENTION: An "eval-source-map" devtool has been used.
+ * This devtool is neither made for production nor for readable output files.
+ * It uses "eval()" calls to create a separate source file with attached SourceMaps in the browser devtools.
+ * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
+ * or disable the default devtool with "devtool: false".
+ * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
+ */
+exports.id = "_rsc_lib_bot-runtime_ts";
+exports.ids = ["_rsc_lib_bot-runtime_ts"];
+exports.modules = {
+
+/***/ "(rsc)/./lib/bot-runtime.ts":
+/*!****************************!*\
+  !*** ./lib/bot-runtime.ts ***!
+  \****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   getBotRuntimeStatus: () => (/* binding */ getBotRuntimeStatus),\n/* harmony export */   getClient: () => (/* binding */ getClient),\n/* harmony export */   runBotCommand: () => (/* binding */ runBotCommand),\n/* harmony export */   updateBotPresence: () => (/* binding */ updateBotPresence)\n/* harmony export */ });\n/* harmony import */ var server_only__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! server-only */ \"(rsc)/./node_modules/next/dist/compiled/server-only/empty.js\");\n/* harmony import */ var server_only__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(server_only__WEBPACK_IMPORTED_MODULE_0__);\n/* harmony import */ var _bot_services_runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @/bot/services/runtime */ \"(rsc)/./bot/services/runtime.ts\");\n/**\n * Server-only bridge between the Dashboard Runtime Control API and the Bot\n * Runtime Manager.\n *\n * IMPORTANT: This module must only ever be imported from server-side Next.js\n * routes. It imports discord.js transitively, so it must never be reachable\n * from a client ('use client') component or a browser bundle.\n */ \n\nfunction getBotRuntimeStatus() {\n    return _bot_services_runtime__WEBPACK_IMPORTED_MODULE_1__.botRuntime.getStatus();\n}\nfunction getClient() {\n    return _bot_services_runtime__WEBPACK_IMPORTED_MODULE_1__.botRuntime.getClient();\n}\nasync function runBotCommand(command) {\n    return _bot_services_runtime__WEBPACK_IMPORTED_MODULE_1__.botRuntime[command]();\n}\nasync function updateBotPresence(presence) {\n    return _bot_services_runtime__WEBPACK_IMPORTED_MODULE_1__.botRuntime.setPresence(presence);\n}\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHJzYykvLi9saWIvYm90LXJ1bnRpbWUudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7OztBQUFBOzs7Ozs7O0NBT0MsR0FDb0I7QUFDK0I7QUFTN0MsU0FBU0M7SUFDZCxPQUFPRCw2REFBVUEsQ0FBQ0UsU0FBUztBQUM3QjtBQUVPLFNBQVNDO0lBQ2QsT0FBT0gsNkRBQVVBLENBQUNHLFNBQVM7QUFDN0I7QUFFTyxlQUFlQyxjQUFjQyxPQUF1QjtJQUN6RCxPQUFPTCw2REFBVSxDQUFDSyxRQUFRO0FBQzVCO0FBRU8sZUFBZUMsa0JBQWtCQyxRQUFxQjtJQUMzRCxPQUFPUCw2REFBVUEsQ0FBQ1EsV0FBVyxDQUFDRDtBQUNoQyIsInNvdXJjZXMiOlsid2VicGFjazovL25leHRqcy8uL2xpYi9ib3QtcnVudGltZS50cz9mMDBlIl0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogU2VydmVyLW9ubHkgYnJpZGdlIGJldHdlZW4gdGhlIERhc2hib2FyZCBSdW50aW1lIENvbnRyb2wgQVBJIGFuZCB0aGUgQm90XG4gKiBSdW50aW1lIE1hbmFnZXIuXG4gKlxuICogSU1QT1JUQU5UOiBUaGlzIG1vZHVsZSBtdXN0IG9ubHkgZXZlciBiZSBpbXBvcnRlZCBmcm9tIHNlcnZlci1zaWRlIE5leHQuanNcbiAqIHJvdXRlcy4gSXQgaW1wb3J0cyBkaXNjb3JkLmpzIHRyYW5zaXRpdmVseSwgc28gaXQgbXVzdCBuZXZlciBiZSByZWFjaGFibGVcbiAqIGZyb20gYSBjbGllbnQgKCd1c2UgY2xpZW50JykgY29tcG9uZW50IG9yIGEgYnJvd3NlciBidW5kbGUuXG4gKi9cbmltcG9ydCAnc2VydmVyLW9ubHknO1xuaW1wb3J0IHsgYm90UnVudGltZSB9IGZyb20gJ0AvYm90L3NlcnZpY2VzL3J1bnRpbWUnO1xuaW1wb3J0IHR5cGUge1xuICBSdW50aW1lQ29tbWFuZCxcbiAgUnVudGltZUNvbW1hbmRSZXN1bHQsXG4gIFJ1bnRpbWVTdGF0dXMsXG4gIEJvdFByZXNlbmNlLFxuICBCb3RQcmVzZW5jZVVwZGF0ZVJlc3VsdCxcbn0gZnJvbSAnQC9ib3QvdHlwZXMnO1xuXG5leHBvcnQgZnVuY3Rpb24gZ2V0Qm90UnVudGltZVN0YXR1cygpOiBSdW50aW1lU3RhdHVzIHtcbiAgcmV0dXJuIGJvdFJ1bnRpbWUuZ2V0U3RhdHVzKCk7XG59XG5cbmV4cG9ydCBmdW5jdGlvbiBnZXRDbGllbnQoKTogaW1wb3J0KCdkaXNjb3JkLmpzJykuQ2xpZW50IHwgbnVsbCB7XG4gIHJldHVybiBib3RSdW50aW1lLmdldENsaWVudCgpO1xufVxuXG5leHBvcnQgYXN5bmMgZnVuY3Rpb24gcnVuQm90Q29tbWFuZChjb21tYW5kOiBSdW50aW1lQ29tbWFuZCk6IFByb21pc2U8UnVudGltZUNvbW1hbmRSZXN1bHQ+IHtcbiAgcmV0dXJuIGJvdFJ1bnRpbWVbY29tbWFuZF0oKTtcbn1cblxuZXhwb3J0IGFzeW5jIGZ1bmN0aW9uIHVwZGF0ZUJvdFByZXNlbmNlKHByZXNlbmNlOiBCb3RQcmVzZW5jZSk6IFByb21pc2U8Qm90UHJlc2VuY2VVcGRhdGVSZXN1bHQ+IHtcbiAgcmV0dXJuIGJvdFJ1bnRpbWUuc2V0UHJlc2VuY2UocHJlc2VuY2UpO1xufVxuIl0sIm5hbWVzIjpbImJvdFJ1bnRpbWUiLCJnZXRCb3RSdW50aW1lU3RhdHVzIiwiZ2V0U3RhdHVzIiwiZ2V0Q2xpZW50IiwicnVuQm90Q29tbWFuZCIsImNvbW1hbmQiLCJ1cGRhdGVCb3RQcmVzZW5jZSIsInByZXNlbmNlIiwic2V0UHJlc2VuY2UiXSwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///(rsc)/./lib/bot-runtime.ts\n");
+
+/***/ })
+
+};
+;

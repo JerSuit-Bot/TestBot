@@ -15,6 +15,9 @@ export const BRAND_COLORS = {
 export const SESSION_COOKIE = 'jersuit_session';
 export const ADMIN_COOKIE = 'jersuit_admin';
 
+/** Runtime lifecycle commands accepted by the Runtime Control API. */
+export const BOT_RUNTIME_COMMANDS = ['start', 'stop', 'restart'] as const;
+
 export const DISCORD_API_BASE = 'https://discord.com/api/v10';
 export const DISCORD_CDN_BASE = 'https://cdn.discordapp.com';
 

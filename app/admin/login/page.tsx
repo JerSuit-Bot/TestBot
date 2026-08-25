@@ -46,7 +46,7 @@ export default function AdminLogin() {
     <main className="flex min-h-screen items-center justify-center bg-[#f4f7f5] px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <img src="/سس.jpg" alt="JerSuit" className="mx-auto h-16 w-16 rounded-2xl object-cover shadow-[0_8px_24px_rgba(25,145,85,0.22)]" />
+          <img src="/سس.png" alt="JerSuit" className="mx-auto h-16 w-16 rounded-2xl object-cover shadow-[0_8px_24px_rgba(25,145,85,0.22)]" />
           <h1 className="mt-4 text-2xl font-semibold tracking-[-0.04em] text-[#11271a]">Jer<span className="text-[#199155]">Suit</span> Control Center</h1>
           <p className="mt-2 text-sm text-[#708278]">Platform Owner access only.</p>
         </div>

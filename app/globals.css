@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 140 25% 97%;
+    --background: 0 0% 0%;
     --foreground: 145 32% 11%;
     --card: 0 0% 100%;
     --card-foreground: 145 32% 11%;
@@ -37,7 +37,7 @@
   }
 
   .dark {
-    --background: 150 20% 7%;
+    --background: 0 0% 0%;
     --foreground: 140 20% 92%;
     --card: 150 18% 10%;
     --card-foreground: 140 20% 92%;
@@ -129,4 +129,43 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+\n
+.admin-theme {
+  --background: 145 45% 8%;
+  --card: 145 40% 12%;
+  --popover: 145 40% 12%;
+  --secondary: 145 35% 15%;
+  --muted: 145 30% 14%;
+  --accent: 145 40% 17%;
+  --border: 145 30% 21%;
+  --input: 145 30% 18%;
+}
+
+.admin-theme .bg-white,
+.admin-theme [class*="bg-white"],
+.admin-theme [class*="bg-card"] {
+  background-color: #050705 !important;
+}
+
+.admin-theme .bg-gray-50,
+.admin-theme .bg-gray-100,
+.admin-theme .bg-slate-50,
+.admin-theme .bg-slate-100 {
+  background-color: #050705 !important;
+}
+
+
+/* Admin surfaces — dark black */
+.admin-theme .bg-white,
+.admin-theme [class*="bg-white"],
+.admin-theme [class*="bg-card"] {
+  background-color: #050705 !important;
+}
+
+.admin-theme .bg-gray-50,
+.admin-theme .bg-gray-100,
+.admin-theme .bg-slate-50,
+.admin-theme .bg-slate-100 {
+  background-color: #050705 !important;
 }

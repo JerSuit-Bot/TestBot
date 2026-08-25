@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { PGlite } from '@electric-sql/pglite';
 
 let dbInstance: PGlite | null = null;
@@ -102,6 +103,23 @@ CREATE TABLE IF NOT EXISTS guild_settings (
   roles_config JSONB DEFAULT '{}',
   feature_toggles JSONB DEFAULT '{}',
   bot_nickname TEXT,
+  command_overrides JSONB DEFAULT '{}',
+  welcome_image TEXT,
+  leave_image TEXT,
+  starboard_enabled BOOLEAN DEFAULT false,
+  starboard_channel_id TEXT,
+  starboard_limit INTEGER DEFAULT 5,
+  suggestions_enabled BOOLEAN DEFAULT false,
+  suggestions_channel_id TEXT,
+  leveling_enabled BOOLEAN DEFAULT false,
+  leveling_config JSONB DEFAULT '{}',
+  economy_enabled BOOLEAN DEFAULT false,
+  economy_config JSONB DEFAULT '{}',
+  giveaway_config JSONB DEFAULT '{}',
+  voice_config JSONB DEFAULT '{}',
+  verification_enabled BOOLEAN DEFAULT false,
+  verification_config JSONB DEFAULT '{}',
+  quarantine_role_id TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -293,24 +311,346 @@ CREATE TABLE IF NOT EXISTS appearance_settings (
   theme_mode TEXT DEFAULT 'light',
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS warnings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  user_name TEXT,
+  moderator_id TEXT,
+  moderator_name TEXT,
+  reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_warnings_user ON warnings(guild_id, user_id);
+
+CREATE TABLE IF NOT EXISTS leveling (
+  guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  xp BIGINT NOT NULL DEFAULT 0,
+  level INTEGER NOT NULL DEFAULT 1,
+  last_message_at TIMESTAMPTZ,
+  PRIMARY KEY (guild_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS economy_wallets (
+  guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  balance BIGINT NOT NULL DEFAULT 0,
+  bank BIGINT NOT NULL DEFAULT 0,
+  last_daily_at TIMESTAMPTZ,
+  last_weekly_at TIMESTAMPTZ,
+  last_work_at TIMESTAMPTZ,
+  PRIMARY KEY (guild_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS economy_shop_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  price BIGINT NOT NULL DEFAULT 0,
+  role_id TEXT,
+  role_name TEXT,
+  stock INTEGER NOT NULL DEFAULT -1,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_shop_guild ON economy_shop_items(guild_id);
+
+CREATE TABLE IF NOT EXISTS giveaways (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  channel_id TEXT,
+  message_id TEXT,
+  prize TEXT NOT NULL,
+  winners INTEGER NOT NULL DEFAULT 1,
+  ends_at TIMESTAMPTZ NOT NULL,
+  ended BOOLEAN NOT NULL DEFAULT false,
+  host_id TEXT,
+  entry_roles JSONB DEFAULT '[]',
+  winner_ids JSONB DEFAULT '[]',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_giveaways_guild ON giveaways(guild_id);
+
+CREATE TABLE IF NOT EXISTS suggestions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  channel_id TEXT,
+  message_id TEXT,
+  author_id TEXT,
+  author_name TEXT,
+  content TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  review_reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_suggestions_guild ON suggestions(guild_id);
+
+CREATE TABLE IF NOT EXISTS starboard_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  source_message_id TEXT NOT NULL,
+  source_channel_id TEXT NOT NULL,
+  starboard_message_id TEXT,
+  stars INTEGER NOT NULL DEFAULT 1,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (source_message_id, guild_id)
+);
+
+CREATE TABLE IF NOT EXISTS custom_commands (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  aliases JSONB DEFAULT '[]',
+  response TEXT,
+  embed JSONB,
+  cooldown_seconds INTEGER NOT NULL DEFAULT 0,
+  allowed_roles JSONB DEFAULT '[]',
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (guild_id, name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_custom_commands_guild ON custom_commands(guild_id);
+
+CREATE TABLE IF NOT EXISTS command_usage (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id UUID REFERENCES guilds(id) ON DELETE SET NULL,
+  command TEXT NOT NULL,
+  category TEXT,
+  user_id TEXT,
+  success BOOLEAN NOT NULL DEFAULT true,
+  latency_ms INTEGER,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_command_usage_command ON command_usage(command);
+CREATE INDEX IF NOT EXISTS idx_command_usage_created ON command_usage(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS reaction_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  channel_id TEXT NOT NULL,
+  message_id TEXT NOT NULL,
+  role_id TEXT NOT NULL,
+  emoji TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_reaction_roles_msg ON reaction_roles(message_id);
+
+CREATE TABLE IF NOT EXISTS autoroles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  role_id TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_autoroles_guild ON autoroles(guild_id);
+
+CREATE TABLE IF NOT EXISTS reminders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  guild_id TEXT,
+  channel_id TEXT,
+  message TEXT,
+  remind_at TIMESTAMPTZ NOT NULL,
+  done BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_reminders_due ON reminders(remind_at) WHERE done = false;
+
+CREATE TABLE IF NOT EXISTS verification_codes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  code TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_verification_users ON verification_codes(guild_id, user_id);
+
+CREATE TABLE IF NOT EXISTS form_templates (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  questions JSONB DEFAULT '[]',
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (guild_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS form_entries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id UUID NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  form_name TEXT NOT NULL,
+  user_id TEXT,
+  user_name TEXT,
+  answers JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_form_entries_guild ON form_entries(guild_id);
+
+CREATE TABLE IF NOT EXISTS platform_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key TEXT UNIQUE NOT NULL,
+  value JSONB NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 `;
 
+async function seedIfEmpty(db: PGlite, table: string, sql: string): Promise<void> {
+  const result = await db.query<{ cnt: string | number }>(
+    `SELECT count(*) AS cnt FROM ${table}`,
+  );
+  const count = Number(result.rows[0]?.cnt ?? 0);
+  if (count === 0) {
+    await db.query(sql);
+  }
+}
+
+const DEFAULT_PLATFORM_SETTINGS: Record<string, unknown> = {
+  platform_name: 'JerSuit',
+  support_url: '',
+  default_language: 'en',
+  notify_new_owner: true,
+  notify_crashes: true,
+  notify_weekly: false,
+  session_timeout_hours: 24,
+  max_login_attempts: 5,
+};
+
+/**
+ * Idempotent migrations for databases created before new columns existed.
+ * CREATE TABLE IF NOT EXISTS does not add missing columns, so each new column
+ * is applied with ALTER TABLE ... ADD COLUMN IF NOT EXISTS.
+ */
+const MIGRATIONS_SQL = `
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS command_overrides JSONB DEFAULT '{}';
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS welcome_image TEXT;
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS leave_image TEXT;
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS starboard_enabled BOOLEAN DEFAULT false;
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS starboard_channel_id TEXT;
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS starboard_limit INTEGER DEFAULT 5;
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS suggestions_enabled BOOLEAN DEFAULT false;
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS suggestions_channel_id TEXT;
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS leveling_enabled BOOLEAN DEFAULT false;
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS leveling_config JSONB DEFAULT '{}';
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS economy_enabled BOOLEAN DEFAULT false;
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS economy_config JSONB DEFAULT '{}';
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS giveaway_config JSONB DEFAULT '{}';
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS voice_config JSONB DEFAULT '{}';
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS verification_enabled BOOLEAN DEFAULT false;
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS verification_config JSONB DEFAULT '{}';
+ALTER TABLE IF EXISTS guild_settings ADD COLUMN IF NOT EXISTS quarantine_role_id TEXT;
+`;
+
+/**
+ * Opens a PGlite instance in the given data directory.
+ *
+ * ROOT-CAUSE RECOVERY: a persisted data directory can become unreadable (e.g.
+ * a partial write, an interrupted init, or a PGlite version upgrade). When
+ * that happens PGlite throws a bare "Aborted()" WASM error which previously
+ * crashed session validation on EVERY request. We detect that failure, move
+ * the corrupt directory aside to a timestamped backup, and initialize a fresh
+ * database so the application stays up without data loss risk.
+ */
+/**
+ * Opens a PGlite instance in the given data directory.
+ *
+ * ROOT-CAUSE RECOVERY: a persisted data directory can become unreadable (e.g.
+ * a partial write, an interrupted init, or a PGlite version upgrade). When
+ * that happens PGlite throws a bare "Aborted()" WASM error which previously
+ * crashed session validation on EVERY request. We detect that failure, move
+ * the corrupt directory aside to a timestamped backup, and initialize a fresh
+ * database so the application stays up without data loss risk.
+ */
+async function openPGlite(dataDir: string): Promise<PGlite> {
+  const fs = await import('fs/promises');
+  await fs.mkdir(dataDir, { recursive: true });
+
+  // PGlite opens the data directory lazily: the constructor does not throw on
+  // a corrupt/legacy directory - the failure surfaces on the FIRST query or
+  // exec. We therefore probe immediately with a trivial query so a corrupt
+  // persisted directory is detected and recovered in one place, instead of
+  // crashing session validation on every later request.
+  try {
+    const db = new PGlite(dataDir);
+    const probe = await db.query<{ v: number }>('SELECT 1 AS v');
+    void probe;
+    return db;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error('db', 'PGlite failed to open data directory - attempting recovery', {
+      error: message,
+      dataDir,
+    });
+
+    const corruptDir = `${dataDir}.corrupt-${Date.now()}`;
+    try {
+      await fs.rename(dataDir, corruptDir);
+      await fs.mkdir(dataDir, { recursive: true });
+    } catch (renameErr) {
+      const renameMessage = renameErr instanceof Error ? renameErr.message : String(renameErr);
+      logger.error('db', 'PGlite recovery: could not move corrupt data directory', {
+        error: renameMessage,
+      });
+      throw err;
+    }
+    logger.warn('db', 'PGlite recovered: initializing a fresh data directory', {
+      backup: corruptDir,
+    });
+    return new PGlite(dataDir);
+  }
+}
+
 async function initDb(): Promise<PGlite> {
-  const db = new PGlite('idb://jersuit-v2');
+  // Node server runtime: use a filesystem-backed data directory so that data
+  // survives application restarts. The `idb://` scheme is browser-only and
+  // fails inside a Node.js server, so it is not used here.
+  const dataDir =
+    process.env.PGLITE_DATA_DIR || `${process.cwd()}/.data/jersuit-v2`;
+
+  const db = await openPGlite(dataDir);
   await db.exec(SCHEMA_SQL);
+  await db.exec(MIGRATIONS_SQL);
 
   // Seed default rows if empty
-  const botConfig = await db.query('SELECT count(*) as cnt FROM bot_configuration');
-  if (botConfig.rows[0].cnt === 0) {
-    await db.query("INSERT INTO bot_configuration (status, activity_type, activity_name, token_configured) VALUES ('online', 'playing', NULL, false)");
-  }
-  const botStatus = await db.query('SELECT count(*) as cnt FROM bot_status');
-  if (botStatus.rows[0].cnt === 0) {
-    await db.query("INSERT INTO bot_status (state) VALUES ('offline')");
-  }
-  const appearance = await db.query('SELECT count(*) as cnt FROM appearance_settings');
-  if (appearance.rows[0].cnt === 0) {
-    await db.query("INSERT INTO appearance_settings DEFAULT VALUES");
+  await seedIfEmpty(
+    db,
+    'bot_configuration',
+    "INSERT INTO bot_configuration (status, activity_type, activity_name, token_configured) VALUES ('offline', 'playing', NULL, false)",
+  );
+  await seedIfEmpty(
+    db,
+    'bot_status',
+    "INSERT INTO bot_status (state) VALUES ('offline')",
+  );
+  await seedIfEmpty(
+    db,
+    'appearance_settings',
+    'INSERT INTO appearance_settings DEFAULT VALUES',
+  );
+
+  // Seed platform_settings defaults (key-value)
+  for (const [key, value] of Object.entries(DEFAULT_PLATFORM_SETTINGS)) {
+    await db.query(
+      `INSERT INTO platform_settings (key, value)
+       SELECT $1, $2::jsonb
+       WHERE NOT EXISTS (SELECT 1 FROM platform_settings WHERE key = $1)`,
+      [key, JSON.stringify(value)],
+    );
   }
 
   return db;
@@ -326,6 +666,28 @@ export async function getDb(): Promise<PGlite> {
   }
   return initPromise;
 }
+
+export interface DbHealth {
+  ok: boolean;
+  error?: string;
+  schema: boolean;
+}
+
+/** Returns whether the database is reachable - used by /api/bot/status. */
+export async function getDbHealth(): Promise<DbHealth> {
+  try {
+    const db = await getDb();
+    await db.query<{ cnt: string | number }>('SELECT count(*) AS cnt FROM users');
+    return { ok: true, schema: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : String(e),
+      schema: false,
+    };
+  }
+}
+
 
 export function generateToken(): string {
   const bytes = new Uint8Array(32);

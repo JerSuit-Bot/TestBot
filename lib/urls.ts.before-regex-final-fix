@@ -1,0 +1,26 @@
+import type { NextRequest } from 'next/server';
+
+/**
+ * Returns the canonical public URL of the application.
+ *
+ * Codespaces / reverse proxies may expose an internal localhost origin,
+ * so NEXT_PUBLIC_APP_URL takes priority.
+ */
+export function getBaseUrl(request?: NextRequest): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+
+  if (configured && /^https?:\\/\\//.test(configured)) {
+    return configured.replace(/\\/+$/, '');
+  }
+
+  if (request) {
+    const url = new URL(request.url);
+
+    // Never expose localhost as the public OAuth callback origin.
+    if (url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') {
+      return url.origin;
+    }
+  }
+
+  return '';
+}

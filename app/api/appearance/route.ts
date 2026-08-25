@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getAppearanceSettings } from '@/lib/services';
 
 export async function GET() {
-  const { data, error } = await supabase.rpc('get_appearance_settings');
+  const appearance = await getAppearanceSettings();
 
-  if (error) {
-    console.error('Failed to get appearance:', error);
+  if (!appearance) {
     return NextResponse.json({ error: 'Failed to load appearance' }, { status: 500 });
   }
 
-  return NextResponse.json({ appearance: data });
+  return NextResponse.json({ appearance });
 }
+

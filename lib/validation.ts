@@ -84,6 +84,15 @@ export const adminLoginSchema = z.object({
   password: z.string().min(1).max(200),
 }).strict();
 
+export const botPresenceSchema = z.object({
+  status: z.enum(['online', 'idle', 'dnd', 'invisible']),
+  activity: z.object({
+    type: z.enum(['playing', 'streaming', 'listening', 'watching', 'competing']),
+    name: z.string().min(1).max(128),
+    url: z.string().url().nullable().optional(),
+  }),
+}).strict();
+
 export const sendMessageSchema = z.object({
   target_type: z.enum(['channel', 'dm']),
   target_id: z.string().min(1),

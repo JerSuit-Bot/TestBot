@@ -1,20 +1,27 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { generateOAuthState } from '@/lib/discord';
+import { generateOAuthState, getDiscordOAuthUrl } from '@/lib/discord';
 import { cookies } from 'next/headers';
-import { getConfig } from '@/lib/config';
+import { getConfig, getOAuthRedirectUri } from '@/lib/config';
+import { logger } from '@/lib/logger';
 
+/**
+ * Step 1 of OAuth: generate a crypto-secure state, store it in an httpOnly
+ * cookie, and redirect to Discord's authorize endpoint. The redirect URI comes
+ * from the single canonical config so authorize/callback/token-exchange agree.
+ */
 export async function GET(request: NextRequest) {
   try {
     getConfig();
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown configuration error';
+    logger.error('auth', '[OAuth] Configuration error at login', { message });
     return NextResponse.json(
-      { error: 'Discord OAuth is not configured. Set DISCORD_CLIENT_ID and DISCORD_REDIRECT_URI environment variables.' },
+      { error: 'Discord OAuth configuration error', details: message },
       { status: 503 },
     );
   }
 
-  const config = getConfig();
   const state = generateOAuthState();
   const cookieStore = cookies();
   cookieStore.set('oauth_state', state, {
@@ -25,7 +32,10 @@ export async function GET(request: NextRequest) {
     maxAge: 600,
   });
 
-  const scope = encodeURIComponent('identify guilds');
-  const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${config.DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(config.DISCORD_REDIRECT_URI)}&response_type=code&scope=${scope}&state=${state}`;
+  logger.info('auth', '[OAuth] Starting login flow', {
+    redirectUri: getOAuthRedirectUri(),
+  });
+
+  const authUrl = getDiscordOAuthUrl(state);
   return NextResponse.redirect(authUrl);
 }

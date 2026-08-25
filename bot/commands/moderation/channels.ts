@@ -1,0 +1,189 @@
+/**
+ * Moderation message/channel commands — real, permission-checked actions.
+ */
+import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
+import { defineCommand, error } from '../framework';
+
+const MANAGE = PermissionFlagsBits.ManageMessages;
+
+function modEmbed(title: string, description: string): EmbedBuilder {
+  return new EmbedBuilder().setTitle(title).setDescription(description).setColor(0x199155);
+}
+
+defineCommand({
+  name: 'clear',
+  description: 'Bulk-delete a number of messages in this channel.',
+  category: 'moderation',
+  memberPermissions: MANAGE,
+  cooldown: 4,
+  usage: '/clear <amount>',
+  builder: (b) =>
+    b.addIntegerOption((o) =>
+      o.setName('amount').setDescription('Messages to delete (max 100)').setRequired(true).setMinValue(1).setMaxValue(100),
+    ),
+  execute: async (ctx) => {
+    const amount = ctx.interaction.options.getInteger('amount') ?? 1;
+    const channel = ctx.interaction.channel;
+    if (!channel || !('bulkDelete' in channel)) return error(ctx.interaction, 'This command only works in text channels.');
+    const deleted = await channel.bulkDelete(Math.min(amount, 100), true).catch(() => null);
+    if (deleted === null) return error(ctx.interaction, 'Could not delete messages (too old or missing permissions).');
+    await ctx.interaction.reply({ embeds: [modEmbed('Cleared', `Deleted **${deleted.size}** messages.`)] });
+  },
+});
+
+defineCommand({
+  name: 'purge',
+  description: 'Alias of /clear — bulk-delete messages.',
+  category: 'moderation',
+  memberPermissions: MANAGE,
+  cooldown: 3,
+  builder: (b) =>
+    b.addIntegerOption((o) =>
+      o.setName('amount').setDescription('Messages to delete').setRequired(true).setMinValue(1).setMaxValue(100),
+    ),
+  execute: async (ctx) => {
+    const amount = ctx.interaction.options.getInteger('amount') ?? 10;
+    const channel = ctx.interaction.channel;
+    if (!channel || !('bulkDelete' in channel)) return error(ctx.interaction, 'This command only works in text channels.');
+    const deleted = await channel.bulkDelete(Math.min(amount, 100), true).catch(() => null);
+    if (deleted === null) return error(ctx.interaction, 'Could not delete messages.');
+    await ctx.interaction.reply({ embeds: [modEmbed('Purged', `Removed **${deleted.size}** messages.`)] });
+  },
+});
+
+defineCommand({
+  name: 'slowmode',
+  description: 'Set the slowmode of the current channel (seconds, 0 disables).',
+  category: 'moderation',
+  memberPermissions: MANAGE,
+  cooldown: 3,
+  builder: (b) =>
+    b.addIntegerOption((o) =>
+      o.setName('seconds').setDescription('Slowmode in seconds (0 disables)').setRequired(true).setMinValue(0).setMaxValue(21600),
+    ),
+  execute: async (ctx) => {
+    const seconds = ctx.interaction.options.getInteger('seconds') ?? 0;
+    const channel = ctx.interaction.channel;
+    if (!channel || !('setRateLimitPerUser' in channel)) return error(ctx.interaction, 'This command only works in text channels.');
+    await channel.setRateLimitPerUser(seconds, 'slowmode command');
+    await ctx.interaction.reply({
+      embeds: [
+        modEmbed(
+          'Slowmode',
+          seconds > 0 ? `Slowmode set to **${seconds}s** in ${channel}.` : 'Slowmode **disabled** in this channel.',
+        ),
+      ],
+    });
+  },
+});
+
+defineCommand({
+  name: 'lock',
+  description: 'Lock the current channel (deny Send Messages for @everyone).',
+  category: 'moderation',
+  memberPermissions: MANAGE,
+  cooldown: 3,
+  execute: async (ctx) => {
+    const guild = ctx.interaction.guild;
+    const channel = ctx.interaction.channel;
+    if (!guild || !channel || !('permissionOverwrites' in channel)) {
+      return error(ctx.interaction, 'This command only works in server text channels.');
+    }
+    await channel.permissionOverwrites.edit(
+      guild.roles.everyone,
+      { SendMessages: false },
+      { reason: 'lock command' },
+    );
+    await ctx.interaction.reply({ embeds: [modEmbed('Locked', `🔒 ${channel} has been locked.`)] });
+  },
+});
+
+defineCommand({
+  name: 'unlock',
+  description: 'Unlock the current channel for @everyone.',
+  category: 'moderation',
+  memberPermissions: MANAGE,
+  cooldown: 3,
+  execute: async (ctx) => {
+    const guild = ctx.interaction.guild;
+    const channel = ctx.interaction.channel;
+    if (!guild || !channel || !('permissionOverwrites' in channel)) {
+      return error(ctx.interaction, 'This command only works in server text channels.');
+    }
+    await channel.permissionOverwrites.edit(guild.roles.everyone, { SendMessages: null });
+    await ctx.interaction.reply({ embeds: [modEmbed('Unlocked', `🔓 ${channel} has been unlocked.`)] });
+  },
+});
+defineCommand({
+  name: 'hide',
+  description: 'Hide the current channel from @everyone.',
+  category: 'moderation',
+  memberPermissions: MANAGE,
+  cooldown: 3,
+  execute: async (ctx) => {
+    const guild = ctx.interaction.guild;
+    const channel = ctx.interaction.channel;
+    if (!guild || !channel || !('permissionOverwrites' in channel)) {
+      return error(ctx.interaction, 'This command only works in server text channels.');
+    }
+    await channel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: false });
+    await ctx.interaction.reply({ embeds: [modEmbed('Hidden', `${channel} is now hidden.`)] });
+  },
+});
+
+defineCommand({
+  name: 'reveal',
+  description: 'Reveal the current channel to @everyone.',
+  category: 'moderation',
+  memberPermissions: MANAGE,
+  cooldown: 3,
+  execute: async (ctx) => {
+    const guild = ctx.interaction.guild;
+    const channel = ctx.interaction.channel;
+    if (!guild || !channel || !('permissionOverwrites' in channel)) {
+      return error(ctx.interaction, 'This command only works in server text channels.');
+    }
+    await channel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: null });
+    await ctx.interaction.reply({ embeds: [modEmbed('Revealed', `${channel} is now visible.`)] });
+  },
+});
+
+defineCommand({
+  name: 'nuke',
+  description: 'Clone the current channel and delete the original (mass purge).',
+  category: 'moderation',
+  memberPermissions: MANAGE,
+  cooldown: 10,
+  execute: async (ctx) => {
+    const channel = ctx.interaction.channel;
+    if (!channel || !('clone' in channel)) return error(ctx.interaction, 'This channel cannot be nuked.');
+    const name = channel.name;
+    const type = channel.type;
+    const position = channel.position;
+    const parent = 'parent' in channel ? channel.parent : null;
+    const topic = 'topic' in channel ? channel.topic : null;
+    await channel.delete('nuke command');
+    const clone = await ctx.interaction.guild?.channels.create({
+      name,
+      type,
+      parent: parent ?? undefined,
+      topic: typeof topic === 'string' ? topic : undefined,
+    });
+    if (clone) await clone.setPosition(position).catch(() => undefined);
+    await ctx.interaction.reply({ embeds: [modEmbed('Nuked', `💥 **${name}** has been nuked. A fresh channel was created.`)] });
+  },
+});
+
+defineCommand({
+  name: 'clone',
+  description: 'Create an exact clone of the current channel.',
+  category: 'moderation',
+  memberPermissions: MANAGE,
+  cooldown: 5,
+  execute: async (ctx) => {
+    const channel = ctx.interaction.channel;
+    if (!channel || !('clone' in channel)) return error(ctx.interaction, 'This channel cannot be cloned.');
+    const copy = await channel.clone({ name: `${channel.name}-copy` });
+    await ctx.interaction.reply({ embeds: [modEmbed('Cloned', `Cloned into ${copy}.`)] });
+  },
+});

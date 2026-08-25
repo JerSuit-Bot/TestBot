@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { getAdminSession } from '@/lib/auth';
-import { ADMIN_COOKIE } from '@/lib/constants';
-import { cookies } from 'next/headers';
+import { updateAppearanceSettings } from '@/lib/services';
 import { appearanceSchema } from '@/lib/validation';
 import { auditLog } from '@/lib/audit';
+import { getClientIP, getUserAgent } from '@/lib/api-utils';
 
 export async function PUT(request: NextRequest) {
   const admin = await getAdminSession();
@@ -22,22 +21,19 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid appearance settings', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const cookieStore = cookies();
-  const token = cookieStore.get(ADMIN_COOKIE)?.value;
-
-  const { data, error } = await supabase.rpc('update_appearance_settings', {
-    p_token: token,
-    p_settings: parsed.data,
-  });
-
-  if (error) return NextResponse.json({ error: 'Failed to update appearance' }, { status: 500 });
-  if (data?.error === 'unauthorized') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const success = await updateAppearanceSettings(parsed.data);
+  if (!success) {
+    return NextResponse.json({ error: 'Failed to update appearance' }, { status: 500 });
+  }
 
   await auditLog({
     actor_name: admin.username,
     action: 'appearance_updated',
     metadata: parsed.data,
+    ip_address: getClientIP(request),
+    user_agent: getUserAgent(request),
   });
 
   return NextResponse.json({ success: true });
 }
+

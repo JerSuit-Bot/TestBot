@@ -322,7 +322,7 @@ export default function LandingPage() {
       <footer className="border-t border-border py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
           <div className="flex items-center gap-2">
-            <img src="/سس.jpg" alt="JerSuit" className="h-7 w-7 rounded-lg object-cover" />
+            <img src="/سس.png" alt="JerSuit" className="h-7 w-7 rounded-lg object-cover" />
             <span className="text-sm font-medium">Jer<span className="text-primary">Suit</span></span>
           </div>
           <p className="text-xs text-muted-foreground">Built for serious communities.</p>

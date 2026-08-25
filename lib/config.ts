@@ -1,4 +1,15 @@
 import { z } from 'zod';
+import {
+  initializeEnv,
+  getEnvConflicts,
+  getEnvDiagnostics,
+} from '@/lib/env';
+
+// CRITICAL: make `.env` / `.env.local` authoritative BEFORE any OAuth,
+// database or bot code reads process.env. This is the architectural fix for
+// the `401 invalid_client` where a stale shell-exported DISCORD_CLIENT_SECRET
+// silently differed from the .env.local value.
+initializeEnv();
 
 const envSchema = z.object({
   DISCORD_CLIENT_ID: z.string().min(1,
@@ -17,6 +28,28 @@ const envSchema = z.object({
   DISCORD_BOT_TOKEN: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().optional().or(z.literal('')),
   NODE_ENV: z.string().optional(),
+}).superRefine((data, ctx) => {
+  const redirect = data.DISCORD_REDIRECT_URI;
+  if (redirect && !redirect.endsWith('/api/auth/callback')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['DISCORD_REDIRECT_URI'],
+      message: 'DISCORD_REDIRECT_URI must end with /api/auth/callback.',
+    });
+  }
+  const appUrl = data.NEXT_PUBLIC_APP_URL;
+  if (appUrl && redirect) {
+    const expected = `${appUrl.replace(/\/+$/, '')}/api/auth/callback`;
+    if (redirect !== expected) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['DISCORD_REDIRECT_URI'],
+        message:
+          `DISCORD_REDIRECT_URI does not match NEXT_PUBLIC_APP_URL. ` +
+          `Expected ${expected}, got ${redirect}.`,
+      });
+    }
+  }
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
@@ -30,10 +63,10 @@ export function getConfig(): EnvConfig {
 
   const result = envSchema.safeParse(process.env);
   if (!result.success) {
-    const missing = result.error.issues
+    const issues = result.error.issues
       .map((i) => `  - ${i.message}`)
       .join('\n');
-    configError = `Configuration error:\n${missing}`;
+    configError = `Configuration error:\n${issues}`;
     throw new Error(configError);
   }
   cachedConfig = result.data;
@@ -57,3 +90,17 @@ export function getConfigErrors(): string | null {
     return (e as Error).message;
   }
 }
+
+/**
+ * Returns the ONE canonical OAuth redirect URI:
+ * `${NEXT_PUBLIC_APP_URL}/api/auth/callback`. Used identically by the
+ * authorize request, the callback and the token exchange so a stale URI can
+ * never silently break OAuth.
+ */
+export function getOAuthRedirectUri(): string {
+  const config = getConfig();
+  const appUrl = config.NEXT_PUBLIC_APP_URL || '';
+  return `${appUrl.replace(/\/+$/, '')}/api/auth/callback`;
+}
+
+export { getEnvConflicts, getEnvDiagnostics };

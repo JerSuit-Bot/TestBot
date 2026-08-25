@@ -1,0 +1,150 @@
+import { NextResponse } from 'next/server';
+
+type DiscordGuild = {
+  id: string;
+  name: string;
+  icon?: string | null;
+  owner?: boolean;
+  permissions?: string;
+};
+
+function getBotToken() {
+  return process.env.DISCORD_BOT_TOKEN?.trim() || '';
+}
+
+async function discordFetch(path: string) {
+  const token = getBotToken();
+
+  if (!token) {
+    throw new Error('DISCORD_BOT_TOKEN is missing');
+  }
+
+  return fetch(`https://discord.com/api/v10${path}`, {
+    headers: {
+      Authorization: `Bot ${token}`,
+      'Content-Type': 'application/json',
+    },
+    cache: 'no-store',
+  });
+}
+
+export async function GET() {
+  try {
+    const token = getBotToken();
+
+    if (!token) {
+      return NextResponse.json(
+        {
+          error: 'DISCORD_BOT_TOKEN is missing',
+          guilds: [],
+        },
+        { status: 500 }
+      );
+    }
+
+    /*
+     * Get every guild where the JerSuit bot is actually installed.
+     *
+     * This is the authoritative source for bot installation status.
+     */
+    const botGuildResponse = await discordFetch('/users/@me/guilds');
+
+    if (!botGuildResponse.ok) {
+      const body = await botGuildResponse.text();
+
+      console.error(
+        'Discord bot guild lookup failed:',
+        botGuildResponse.status,
+        body
+      );
+
+      return NextResponse.json(
+        {
+          error: 'Discord bot guild lookup failed',
+          status: botGuildResponse.status,
+          guilds: [],
+        },
+        { status: 502 }
+      );
+    }
+
+    const botGuilds = (await botGuildResponse.json()) as DiscordGuild[];
+
+    const installedGuildIds = new Set(
+      botGuilds.map((guild) => guild.id)
+    );
+
+    /*
+     * The dashboard can also use the user's Discord OAuth guild list.
+     * If the project already has an authenticated user endpoint,
+     * fetch it from the existing session API.
+     */
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      'http://localhost:3000';
+
+    let userGuilds: DiscordGuild[] = [];
+
+    try {
+      const userResponse = await fetch(
+        `${baseUrl.replace(/\/+$/, '')}/api/auth/me`,
+        {
+          cache: 'no-store',
+        }
+      );
+
+      if (userResponse.ok) {
+        const user = await userResponse.json();
+
+        if (Array.isArray(user?.guilds)) {
+          userGuilds = user.guilds;
+        }
+      }
+    } catch {
+      // The existing auth implementation may not expose guilds here.
+    }
+
+    /*
+     * If /api/auth/me doesn't expose guilds, return installed bot guilds.
+     * Otherwise merge the user's guilds with the bot installation state.
+     */
+    const sourceGuilds =
+      userGuilds.length > 0 ? userGuilds : botGuilds;
+
+    const guilds = sourceGuilds.map((guild) => ({
+      id: guild.id,
+      name: guild.name,
+      icon: guild.icon ?? null,
+      owner: guild.owner ?? false,
+      permissions: guild.permissions ?? '0',
+
+      // AUTHORITATIVE BOT INSTALL CHECK
+      bot_added: installedGuildIds.has(guild.id),
+    }));
+
+    return NextResponse.json(
+      {
+        guilds,
+        installedGuildIds: [...installedGuildIds],
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
+    );
+  } catch (error) {
+    console.error('GET /api/guilds failed:', error);
+
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to load guilds',
+        guilds: [],
+      },
+      { status: 500 }
+    );
+  }
+}

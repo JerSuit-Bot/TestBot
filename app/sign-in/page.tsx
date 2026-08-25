@@ -46,7 +46,7 @@ export default function SignInPage() {
           {/* Logo */}
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5">
-              <img src="/سس.jpg" alt="JerSuit" className="h-8 w-8 rounded-lg object-cover" />
+              <img src="/سس.png" alt="JerSuit" className="h-8 w-8 rounded-lg object-cover" />
               <span className="text-base font-semibold tracking-tight">Jer<span className="text-primary">Suit</span></span>
             </Link>
             <ThemeToggle />
@@ -85,7 +85,7 @@ export default function SignInPage() {
           <div className="w-full max-w-sm">
             {/* Mobile logo */}
             <div className="mb-8 flex items-center justify-center gap-2.5 lg:hidden">
-              <img src="/سس.jpg" alt="JerSuit" className="h-9 w-9 rounded-lg object-cover" />
+              <img src="/سس.png" alt="JerSuit" className="h-9 w-9 rounded-lg object-cover" />
               <span className="text-lg font-semibold tracking-tight">Jer<span className="text-primary">Suit</span></span>
             </div>
 
@@ -97,7 +97,7 @@ export default function SignInPage() {
             ) : user ? (
               <div className="animate-fade-up space-y-6">
                 <div>
-                  <h1 className="text-2xl font-semibold tracking-tight">You're signed in</h1>
+                  <h1 className="text-2xl font-semibold tracking-tight">You&apos;re signed in</h1>
                   <p className="mt-2 text-sm text-muted-foreground">Continue to your server dashboard.</p>
                 </div>
 
@@ -167,7 +167,7 @@ export default function SignInPage() {
                 </div>
 
                 <p className="text-center text-xs text-muted-foreground">
-                  By signing in, you agree to use JerSuit responsibly in accordance with Discord's Terms of Service.
+                  By signing in, you agree to use JerSuit responsibly in accordance with Discord&apos;s Terms of Service.
                 </p>
               </div>
             )}
